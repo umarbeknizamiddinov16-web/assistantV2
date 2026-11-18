@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartAI Assistent — подходит ли вам вакансия</title>
+  <meta name="description" content="Загрузите резюме, и ИИ покажет, насколько оно подходит вакансиям с hh.ru, чего не хватает, и напишет сопроводительное письмо.">
+  <meta name="theme-color" content="#2547D0">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232547D0'/%3E%3Cpath d='M16 6a10 10 0 1 0 10 10' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='8' r='3' fill='%23F0A22E'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=6">
+</head>
+<body data-view="loading">
+  <a class="skip" href="#work">К основному содержимому</a>
+
+  <header class="top">
+    <div class="wrap top__in">
+      <a class="brand" href="/" aria-label="SmartAI Assistent">
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--cobalt)"/><path d="M16 6a10 10 0 1 0 10 10" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="24" cy="8" r="3" fill="var(--saffron)"/></svg>
+        <span>SmartAI Assistent</span>
+      </a>
+      <div class="top__right">
+        <div class="user" id="user-box" hidden>
+          <span class="user__name" id="user-name"></span>
+          <button class="btn btn--ghost btn--sm" id="logout" type="button">Выйти</button>
+        </div>
+        <a class="btn btn--ghost tg" href="https://t.me/SmartAI_Assistent_bot" target="_blank" rel="noopener">Открыть в Telegram</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="view-auth">
+      <div class="wrap hero__in">
+        <div class="hero__text">
+          <h1>Узнайте, подходит ли вам вакансия, ещё до отклика</h1>
+          <p class="lead">Создайте аккаунт, загрузите резюме и укажите должности. Мы найдём свежие вакансии на hh.ru, оценим совпадение, покажем, каких навыков не хватает, и напишем сопроводительное письмо под каждую.</p>
+        </div>
+
+        <section class="authcard" id="auth-card" aria-labelledby="h-auth">
+          <h2 id="h-auth">Начнём</h2>
+          <div class="tabs" role="tablist" aria-label="Вход или регистрация">
+            <button role="tab" id="atab-register" aria-selected="true" class="tab">Регистрация</button>
+            <button role="tab" id="atab-login" aria-selected="false" class="tab" tabindex="-1">Вход</button>
+          </div>
+          <p class="muted authcard__note">Один аккаунт для сайта и Telegram-бота: резюме и фильтры общие. Если аккаунт уже создан в боте, войдите с тем же логином, паролем и email.</p>
+          <form id="auth-form" novalidate>
+            <div class="field">
+              <label for="a-login">Логин</label>
+              <input id="a-login" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="254">
+              <span class="hint" id="login-hint">3–32 символа: латинские буквы, цифры, _ . -</span>
+            </div>
+            <div class="field">
+              <label for="a-pass">Пароль</label>
+              <input id="a-pass" type="password" autocomplete="new-password" maxlength="200">
+              <span class="hint" id="pass-hint">Не короче 8 символов.</span>
+            </div>
+            <div class="field" id="email-field">
+              <label for="a-email">Электронная почта</label>
+              <input id="a-email" type="email" autocomplete="email" inputmode="email" maxlength="254">
+            </div>
+            <div class="field" id="name-field">
+              <label for="a-name">Как вас зовут <span class="muted">(необязательно)</span></label>
+              <input id="a-name" type="text" autocomplete="name" maxlength="80">
+              <span class="hint">Подставим имя в подпись сопроводительного письма. Если пропустить, будет логин.</span>
+            </div>
+            <p class="msg" id="auth-msg" role="alert" hidden></p>
+            <button class="btn btn--primary btn--lg" id="auth-submit" type="submit">Создать аккаунт</button>
+          </form>
+        </section>
+      </div>
+    </section>
+
+    <section id="work" class="work wrap" aria-label="Подбор вакансий">
+      <div class="onboard-head" id="onboard-head">
+        <h1 class="onboard-title">Давайте подготовим поиск</h1>
+        <ol class="stepper" id="stepper" aria-label="Шаги">
+          <li class="done">Аккаунт</li>
+          <li id="step-2">Резюме</li>
+          <li id="step-3">Что ищем</li>
+        </ol>
+      </div>
+      <div class="panels">
+        <!-- Резюме -->
+        <section class="panel" id="panel-resume" aria-labelledby="h-resume">
+          <div class="panel__head">
+            <h2 id="h-resume">Резюме</h2>
+            <span class="status" id="resume-status" hidden>Сохранено</span>
+          </div>
+          <p class="intro">По резюме ИИ оценит, насколько вы подходите каждой вакансии, и напишет письмо с вашими сильными сторонами.</p>
+
+          <div id="resume-editor">
+            <div class="tabs" role="tablist" aria-label="Способ добавления резюме">
+              <button role="tab" id="tab-file" aria-selected="true" aria-controls="pane-file" class="tab">Файл</button>
+              <button role="tab" id="tab-text" aria-selected="false" aria-controls="pane-text" class="tab" tabindex="-1">Текст</button>
+            </div>
+
+            <div role="tabpanel" id="pane-file" aria-labelledby="tab-file">
+              <label class="drop" id="drop" tabindex="0">
+                <input type="file" id="file" accept=".pdf,.docx,.txt" hidden>
+                <svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true"><path d="M14 6h14l10 10v24a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 6v10h10M24 35V23m0 0-5 5m5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="drop__title">Перетащите файл или нажмите, чтобы выбрать</span>
+                <span class="muted">PDF, DOCX или TXT, до 5 МБ</span>
+              </label>
+            </div>
+
+            <div role="tabpanel" id="pane-text" aria-labelledby="tab-text" hidden>
+              <label class="sr" for="resume-text">Текст резюме</label>
+              <textarea id="resume-text" rows="9" placeholder="Опишите опыт, навыки и образование"></textarea>
+              <button class="btn btn--primary" id="save-text" type="button">Сохранить резюме</button>
+            </div>
+          </div>
+
+          <p class="msg" id="resume-msg" role="alert" hidden></p>
+
+          <div class="resume-card" id="resume-card" hidden>
+            <div class="resume-card__head">
+              <svg viewBox="0 0 48 48" width="34" height="34" aria-hidden="true"><path d="M14 6h14l10 10v24a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M28 6v10h10M18 26h12M18 32h12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div>
+                <strong id="resume-name">Резюме</strong>
+                <span class="muted" id="resume-meta"></span>
+              </div>
+            </div>
+            <pre class="resume-card__preview" id="resume-preview"></pre>
+            <div class="resume-card__actions">
+              <button class="btn btn--primary btn--sm" id="view-resume" type="button">Посмотреть файл</button>
+              <button class="btn btn--danger btn--sm" id="delete-resume" type="button">Удалить файл</button>
+            </div>
+            <p class="muted resume-card__note">Можно хранить только одно резюме. Чтобы добавить другое, сначала удалите это.</p>
+          </div>
+
+          <div class="step-actions" id="resume-actions">
+            <button class="btn btn--primary" id="resume-next" type="button" disabled>Далее: что ищем</button>
+          </div>
+        </section>
+
+        <!-- Фильтры -->
+        <section class="panel" id="panel-filters" aria-labelledby="h-filters">
+          <div class="panel__head">
+            <h2 id="h-filters">Что ищем</h2>
+            <span class="status" id="filters-status" hidden>Сохранено</span>
+          </div>
+          <p class="intro">По этим данным мы подберём вакансии на hh.ru. Всё можно будет изменить позже.</p>
+
+          <form id="filters-form" novalidate>
+            <div class="field">
+              <label for="kw-input">Желаемые должности</label>
+              <div class="tags" id="tags">
+                <input id="kw-input" type="text" autocomplete="off" placeholder="Например, Стажёр Python" enterkeyhint="done">
+              </div>
+              <span class="hint">Введите должность и нажмите Enter. До 10 штук.</span>
+            </div>
+
+            <fieldset class="field">
+              <legend>Где</legend>
+              <div class="seg" id="loc-seg"></div>
+              <input id="loc-custom" type="text" placeholder="Название города" maxlength="100" hidden aria-label="Свой город">
+            </fieldset>
+
+            <fieldset class="field">
+              <legend>Тип занятости</legend>
+              <div class="seg" id="emp-seg"></div>
+            </fieldset>
+
+            <p class="msg" id="filters-msg" role="alert" hidden></p>
+            <div class="step-actions">
+              <button class="btn btn--ghost" id="filters-back" type="button">Назад</button>
+              <button class="btn btn--primary" id="filters-submit" type="submit">Сохранить фильтры</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- Результаты -->
+      <section class="results" aria-labelledby="h-results">
+        <div class="results__bar">
+          <div>
+            <h2 id="h-results">Подходящие вакансии</h2>
+            <p class="muted" id="search-status" aria-live="polite">Добавьте резюме и должности, затем запустите поиск.</p>
+          </div>
+          <div class="results__actions">
+            <button class="btn btn--ghost btn--lg" id="chat-open" type="button">💬 Чат с ИИ</button>
+            <button class="btn btn--primary btn--lg" id="search-btn" type="button" disabled>Найти вакансии</button>
+          </div>
+        </div>
+        <div class="progress" id="progress" hidden><span></span></div>
+        <div class="grid" id="cards"></div>
+        <div class="empty" id="empty">
+          <svg viewBox="0 0 120 120" width="88" height="88" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-width="8" opacity=".18"/><path d="M60 8a52 52 0 0 1 36.8 15.2" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/></svg>
+          <p>Здесь появятся карточки с оценкой совпадения.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="vacancy-page wrap" id="vacancy-page" hidden aria-labelledby="vacancy-title">
+      <a class="btn btn--ghost vacancy-back" id="vacancy-back" href="/">← К списку вакансий</a>
+      <article class="vacancy-detail" id="vacancy-detail">
+        <p class="muted">Загружаем описание с hh.ru…</p>
+      </article>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      <span>Вакансии предоставляет hh.ru. Оценка ИИ носит справочный характер.</span>
+      <a href="https://t.me/SmartAI_Assistent_bot" target="_blank" rel="noopener">Тот же помощник в Telegram</a>
+    </div>
+  </footer>
+
+  <dialog class="modal" id="resume-dialog" aria-labelledby="resume-dialog-title">
+    <div class="modal__head">
+      <h2 id="resume-dialog-title">Резюме</h2>
+      <button class="btn btn--ghost btn--sm" id="resume-dialog-close" type="button">Закрыть</button>
+    </div>
+    <p class="muted" id="resume-dialog-meta"></p>
+    <pre class="modal__text" id="resume-dialog-text">Загружаем…</pre>
+  </dialog>
+
+  <dialog class="modal modal--chat" id="chat-dialog" aria-labelledby="chat-title">
+    <div class="modal__head">
+      <h2 id="chat-title">Чат с ИИ о работе</h2>
+      <div class="chat__tools">
+        <button class="btn btn--ghost btn--sm" id="chat-clear" type="button">Очистить</button>
+        <button class="btn btn--ghost btn--sm" id="chat-close" type="button">Закрыть</button>
+      </div>
+    </div>
+    <p class="muted chat__note">Только вопросы о работе и карьере. ИИ учитывает ваше резюме и подбирает вакансии под ваши термины.</p>
+    <div class="chat__log" id="chat-log" role="log" aria-live="polite"></div>
+    <div class="chat__chips" id="chat-chips"></div>
+    <p class="msg" id="chat-msg" role="alert" hidden></p>
+    <form class="chat__form" id="chat-form" novalidate>
+      <textarea id="chat-input" rows="1" maxlength="500" placeholder="Например: какие работы с большой зарплатой мне подойдут?" aria-label="Сообщение"></textarea>
+      <button class="btn btn--primary" id="chat-send" type="submit">Отправить</button>
+    </form>
+  </dialog>
+
+  <dialog class="modal modal--sm" id="confirm-dialog" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">Удалить резюме?</h2>
+    <p id="confirm-text" class="muted"></p>
+    <p class="msg" id="confirm-msg" role="alert" hidden></p>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="confirm-no" type="button">Отмена</button>
+      <button class="btn btn--danger" id="confirm-yes" type="button">Да, удалить</button>
+    </div>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <script src="/app.js?v=6" defer></script>
+</body>
+</html>
