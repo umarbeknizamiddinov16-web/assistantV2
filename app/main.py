@@ -21,11 +21,13 @@ from app.config import settings
 from app.db import mongo
 from app.web.api import router as web_router
 from pathlib import Path
+import os
 
 logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger(__name__)
 
 _tasks: set[asyncio.Task] = set()
+IS_VERCEL = bool(os.getenv("VERCEL"))
 
 
 async def _run_long_polling(
@@ -108,15 +110,22 @@ async def lifespan(app: FastAPI):
     app.state.bot, app.state.dp = bot, dp
 
     mongo_ready = asyncio.Event()
-    mongo_task = asyncio.create_task(_connect_mongo_with_retry(mongo_ready))
+    mongo_task = None
     polling_task = None
     webhook_task = None
-    if settings.webhook_base_url:
-        webhook_task = asyncio.create_task(_configure_webhook(bot, dp, mongo_ready))
-        log.info("Задача настройки webhook запущена")
+
+    if IS_VERCEL:
+        # На Vercel подключаемся к базе синхронно до приёма первого HTTP-запроса
+        if await mongo.connect():
+            mongo_ready.set()
     else:
-        polling_task = asyncio.create_task(_run_long_polling(bot, dp, mongo_ready))
-        log.info("Задача long polling запущена, ожидается подключение MongoDB")
+        mongo_task = asyncio.create_task(_connect_mongo_with_retry(mongo_ready))
+        if settings.webhook_base_url:
+            webhook_task = asyncio.create_task(_configure_webhook(bot, dp, mongo_ready))
+            log.info("Задача настройки webhook запущена")
+        else:
+            polling_task = asyncio.create_task(_run_long_polling(bot, dp, mongo_ready))
+            log.info("Задача long polling запущена, ожидается подключение MongoDB")
 
     try:
         yield
@@ -149,17 +158,13 @@ async def webhook(request: Request, x_telegram_bot_api_secret_token: str | None 
         raise HTTPException(status_code=403, detail="forbidden")
     bot, dp = request.app.state.bot, request.app.state.dp
     update = Update.model_validate(await request.json(), context={"bot": bot})
-    # отвечаем Telegram сразу, обработка идёт в фоне, не блокируя других пользователей
     task = asyncio.create_task(dp.feed_update(bot, update))
     _tasks.add(task)
     task.add_done_callback(_tasks.discard)
     return {"ok": True}
 
-app.include_router(web_router)
-app.mount("/", StaticFiles(directory=Path(__file__).parent / "web" / "static", html=True), name="web")
 
-# ---------- веб-интерфейс (дополнительно к Telegram-боту) ----------
+# ---------- веб-интерфейс ----------
 if settings.web_enabled:
     app.include_router(web_router)
-    # монтируется последним: /health, /webhook и /api имеют приоритет
     app.mount("/", StaticFiles(directory=Path(__file__).parent / "web" / "static", html=True), name="web")

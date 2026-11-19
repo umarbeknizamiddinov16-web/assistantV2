@@ -1,11 +1,9 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Все секреты читаются только из переменных окружения / .env."""
-
-    web_searches_per_hour: int = 10
-    web_enabled: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
@@ -31,6 +29,16 @@ class Settings(BaseSettings):
     web_enabled: bool = True            # веб-интерфейс на / и API на /api
     web_searches_per_hour: int = 10     # лимит поисков с одного IP (0 = без лимита)
     log_level: str = "INFO"
+
+    @field_validator("mongodb_uri", "telegram_bot_token", "openrouter_api_key", mode="before")
+    @classmethod
+    def clean_secrets(cls, v: str) -> str:
+        if isinstance(v, str):
+            v = v.strip().strip('"').strip("'")
+            # на случай если при копировании из .env попало "MONGODB_URI=mongodb+srv://..."
+            if "=" in v and v.split("=", 1)[0].isupper():
+                v = v.split("=", 1)[1].strip().strip('"').strip("'")
+        return v
 
 
 settings = Settings()
