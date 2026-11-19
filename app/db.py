@@ -1,5 +1,6 @@
 import logging
 
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING
 
@@ -22,12 +23,23 @@ class Mongo:
         return self.db["web_sessions"]
 
     async def connect(self) -> bool:
+
+        uri = settings.mongodb_uri.strip().strip('"').strip("'")
+        self.client = AsyncIOMotorClient(
+    uri,
+    tz_aware=True,
+    serverSelectionTimeoutMS=5_000,
+    connectTimeoutMS=5_000,
+    tlsCAFile=certifi.where(),
+    )
+
         if self.client is None:
             self.client = AsyncIOMotorClient(
                 settings.mongodb_uri,
                 tz_aware=True,
                 serverSelectionTimeoutMS=5_000,
                 connectTimeoutMS=5_000,
+                tlsCAFile=certifi.where(),
             )
             self.db = self.client[settings.mongodb_db]
 
