@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     openrouter_fallback_model: str = "google/gemma-4-26b-a4b-it:free"
     openrouter_base_url: str = "https://openrouter.ai"
 
-    # обязателен: hh.ru блокирует анонимные запросы
     hh_user_agent: str
 
     webhook_base_url: str = ""
